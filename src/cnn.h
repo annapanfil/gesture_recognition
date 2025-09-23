@@ -1,8 +1,8 @@
 #pragma once
 #include <torch/torch.h>
 
-struct CNN : torch::nn::Module{
-    CNN();
+struct CNNImpl : torch::nn::Module{
+    CNNImpl();
     torch::Tensor forward(torch::Tensor x);
 
     torch::nn::Conv2d conv1{nullptr}, conv2{nullptr};
@@ -14,3 +14,5 @@ struct CNN : torch::nn::Module{
     torch::nn::Linear fc1{nullptr};
     torch::nn::LogSoftmax softmax{nullptr};
 };
+
+TORCH_MODULE(CNN);

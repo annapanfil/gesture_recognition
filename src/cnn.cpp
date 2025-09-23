@@ -1,6 +1,6 @@
-#include "cnn.hpp"
+#include "cnn.h"
 
-CNN::CNN() {
+CNNImpl::CNNImpl() {
         conv1 = register_module("conv1", torch::nn::Conv2d(1, 16, 3));  // 255x255x1 -> 253x253x16
         bn1 = register_module("bn1", torch::nn::BatchNorm2d(16)); 
         relu1 = register_module("relu1", torch::nn::ReLU());  
@@ -13,11 +13,11 @@ CNN::CNN() {
 
         flatten = register_module("flatten", torch::nn::Flatten()); // 32*62*62
         dropout = register_module("dropout", torch::nn::Dropout(0.5));
-        fc1 = register_module("fc1", torch::nn::Linear(32 * 62 * 62, 10)); // 10 classes
+        fc1 = register_module("fc1", torch::nn::Linear(32 * 62 * 62, 14)); // 14 classes
         softmax = register_module("softmax", torch::nn::LogSoftmax(1));
     }
 
-torch::Tensor CNN::forward(torch::Tensor x){
+torch::Tensor CNNImpl::forward(torch::Tensor x){
         x = pool1->forward(relu1->forward(bn1->forward(conv1->forward(x))));
         x = pool2->forward(relu2->forward(bn2->forward(conv2->forward(x))));
         x = flatten->forward(x);
