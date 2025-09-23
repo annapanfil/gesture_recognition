@@ -3,3 +3,4 @@ models/
 data/
 *.o
 .vscode/
+*__pycache__/
