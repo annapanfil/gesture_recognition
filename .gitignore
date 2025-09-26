@@ -1,6 +1,10 @@
 build/
 models/
 data/
+managed_components/
 *.o
+
 .vscode/
 *__pycache__/
+*.lock
+*.old
