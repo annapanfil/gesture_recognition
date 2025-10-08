@@ -11,7 +11,7 @@ def train_model(model):
     model.train()
     batch_size = 64
     data_root = "../data/HG14/HG14-Hand-Gesture/"
-    img_size = 64
+    img_size = 32
     num_epochs = 5
 
     transform = transforms.Compose([
@@ -61,5 +61,5 @@ if __name__ == "__main__":
     model = cnn.CNN()
     train_model(model)
     os.makedirs("../models", exist_ok=True)
-    torch.save(model.state_dict(), "../models/cnn_trained.pt")
-    print("Model saved to ../models/cnn_trained.pt")
+    torch.save(model.state_dict(), "../models/cnn_trained_input32.pt")
+    print("Model saved to ../models/cnn_trained_input32.pt")

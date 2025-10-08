@@ -22,7 +22,8 @@
 // 4 for flash led or 33 for back led
 #define LED_GPIO_NUM 4
 
-const char *WIFI_SSID = "Lariat";
-const char *WIFI_PASS = "lariat2019";
+static const char* WIFI_SSID = "<your ssid";
+static const char* WIFI_PASS = "<your password>";
 
-#endif
+static const char* TAG = "gestures";
+#endif // CONSTS_H
