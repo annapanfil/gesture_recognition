@@ -5,11 +5,44 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
-
-
+#include "model.h"
 #include "consts.h"
+#include "tflite_model.h"
 
-const char* TAG = "gestures";
+#include "esp_system.h" //for esp_get_free_heap_size()
+#include "esp_heap_caps.h" //for heap_caps_get_free_size()
+
+void print_memory_stats() {
+    ESP_LOGI("MEMORY", "=== Memory Stats ===");
+    
+    // Internal RAM (DRAM)
+    size_t total_internal = heap_caps_get_total_size(MALLOC_CAP_8BIT);
+    size_t free_internal = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    size_t min_free_internal = heap_caps_get_minimum_free_size(MALLOC_CAP_8BIT);
+    size_t largest_block_internal = heap_caps_get_largest_free_block(MALLOC_CAP_8BIT);
+    
+    ESP_LOGI("MEMORY", "Total Heap: %zu bytes", total_internal);
+    ESP_LOGI("MEMORY", "Free Heap: %zu bytes", free_internal);
+    ESP_LOGI("MEMORY", "Used Heap: %zu bytes", total_internal - free_internal);
+    ESP_LOGI("MEMORY", "Largest Free Block: %zu bytes", largest_block_internal);
+    ESP_LOGI("MEMORY", "Minimum Free Heap Ever: %zu bytes", min_free_internal);
+    
+    // PSRAM
+    size_t total_psram = heap_caps_get_total_size(MALLOC_CAP_SPIRAM);
+    size_t free_psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+    size_t largest_block_psram = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM);
+    
+    ESP_LOGI("MEMORY", "Total PSRAM: %zu bytes", total_psram);
+    ESP_LOGI("MEMORY", "Free PSRAM: %zu bytes", free_psram);
+    ESP_LOGI("MEMORY", "Largest Free PSRAM Block: %zu bytes", largest_block_psram);
+    
+    // Task info
+    ESP_LOGI("MEMORY", "Main Task Stack High Water Mark: %zu bytes", 
+             uxTaskGetStackHighWaterMark(NULL));
+    
+    ESP_LOGI("MEMORY", "====================");
+}
+
 
 void initCamera(){
     ESP_LOGI(TAG, "Camera: Initializing...");
@@ -183,19 +216,104 @@ int init_wifi() {
     return -1;
 }
 
-
 int main() {
-    httpd_handle_t server = NULL;
+    // print_memory_stats();
+    // ESP_LOGI("STACK", "Start - Free stack: %u", uxTaskGetStackHighWaterMark(NULL));
     initCamera();
-
+    // ESP_LOGI("STACK", "After camera init - Free stack: %u", uxTaskGetStackHighWaterMark(NULL));
+    
     // init WiFi
+    // print_memory_stats();
+    httpd_handle_t server = NULL;
     init_wifi();
+    
+    // print_memory_stats();
+    // ESP_LOGI("MODEL_SIZE", "Model size: %d bytes", model_tflite_len);
+    TFLiteModel tflite_model(model_tflite, &model_tflite_len);
+    
+    if (!tflite_model.init()) {
+        ESP_LOGE(TAG, "Failed to initialize TFLite model");
+        return -1;
+    }
+    
+    // ESP_LOGI(TAG, "Setup complete");
+    // print_memory_stats();
+    
     startServer(server);
+    // ESP_LOGI("STACK", "End - Free stack: %u", uxTaskGetStackHighWaterMark(NULL));
 
-    ESP_LOGI(TAG, "Setup complete");
+    vTaskSuspend(NULL);
     return 0;
 }
 
+
+
+
+    // Preprocess the image
+
+
+    // cv::Mat image = cv::imread("/home/anna/Pictures/litter.png");
+    // if (image.empty()){
+    //     std::cerr << "Couldn't read the photo\n";
+    //     return 1;
+    // }
+
+    // cv::Mat preprocessed_image;
+    // cv::resize(image, preprocessed_image, cv::Size(255, 255), 0, 0);
+    // cv::cvtColor(preprocessed_image, preprocessed_image, cv::COLOR_BGR2GRAY);
+    // preprocessed_image.convertTo(preprocessed_image, CV_32F, 1/255.0);
+
+    // cv::imshow("Image after preprocessing", preprocessed_image);
+    // cv::waitKey(0);
+
+    // // Load the TFLite model and prepare the interpreter
+    // std::unique_ptr<tflite::FlatBufferModel> model = tflite::FlatBufferModel::BuildFromFile("../models/model.tflite");
+    // if (!model) {
+    //     std::cerr << "Failed to load model\n";
+    //     return 1;
+    // }
+
+    // tflite::ops::builtin::BuiltinOpResolver resolver;
+    // std::unique_ptr<tflite::Interpreter> interpreter;
+    // tflite::InterpreterBuilder(*model, resolver)(&interpreter);
+    // if (!interpreter) {
+    //     std::cerr << "Failed to construct interpreter\n";
+    //     return 1;
+    // }
+
+    // if (interpreter->AllocateTensors() != kTfLiteOk) {
+    //     std::cerr << "Failed to allocate tensors\n";
+    //     return 1;
+    // }
+
+    // float* input = interpreter->typed_input_tensor<float>(0);
+    
+    // // check input tensor shape
+    // TfLiteIntArray* dims = interpreter->tensor(interpreter->inputs()[0])->dims;
+    // int h = dims->data[1];
+    // int w = dims->data[2];
+    // int c = dims->data[3];
+
+    // if (preprocessed_image.rows != h || preprocessed_image.cols != w || preprocessed_image.channels() != c) {
+    //     std::cerr << "Image shape mismatch\n"; return -1;
+    // }
+
+    // // copy data to input tensor and run inference
+    // std::memcpy(input, preprocessed_image.data, sizeof(float) * h * w * c);
+    
+    // if (interpreter->Invoke() != kTfLiteOk) {
+    //     std::cerr << "Failed to invoke tflite!\n";
+    //     return 1;
+    // }
+
+    // float* output = interpreter->typed_output_tensor<float>(0);
+    // int output_size = interpreter->tensor(interpreter->outputs()[0])->bytes / sizeof(float);
+
+    // std::cout << "Model output: ";
+    // for (int i = 0; i < output_size; i++) {
+    //     std::cout << output[i] << " ";
+    // }
+    // std::cout << std::endl;
 
 extern "C" void app_main() {
     main();
