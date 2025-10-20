@@ -16,3 +16,4 @@ dependencies:
   #   public: true
   espressif/esp32-camera: '*'
   espressif/esp-tflite-micro: '*'
+  espressif/esp_jpeg: '*'

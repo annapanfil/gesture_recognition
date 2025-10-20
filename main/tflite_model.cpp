@@ -58,6 +58,14 @@ bool TFLiteModel::init() {
 
 }
 
+
+TfLiteStatus TFLiteModel::invoke(){
+    return interpreter_->Invoke();
+}
+
+
 TFLiteModel::~TFLiteModel(){
     if (tensor_arena_) heap_caps_free(tensor_arena_);
 }
+
+

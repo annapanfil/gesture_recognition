@@ -12,6 +12,9 @@
 #include "esp_system.h" //for esp_get_free_heap_size()
 #include "esp_heap_caps.h" //for heap_caps_get_free_size()
 
+TFLiteModel* tflite_model;
+bool display_original = true;
+
 void print_memory_stats() {
     ESP_LOGI("MEMORY", "=== Memory Stats ===");
     
@@ -71,8 +74,8 @@ void initCamera(){
     config.pin_pwdn = PWDN_GPIO_NUM;
     config.pin_reset = RESET_GPIO_NUM;
     config.xclk_freq_hz = 20000000;
-    config.pixel_format = PIXFORMAT_JPEG;
-    config.frame_size = FRAMESIZE_QQVGA; //160x120
+    config.pixel_format = PIXFORMAT_GRAYSCALE;
+    config.frame_size = FRAMESIZE_96X96;
     config.fb_location = CAMERA_FB_IN_PSRAM;
     config.grab_mode = CAMERA_GRAB_WHEN_EMPTY; //CAMERA_GRAB_LATEST;
     config.jpeg_quality = 12;
@@ -90,6 +93,47 @@ void initCamera(){
     ESP_LOGI(TAG, "Camera: Initialized successfully");
 }
 
+void resize_and_normalize_grayscale(uint8_t* src, int src_w, int src_h,
+                                   float* dst, int dst_w, int dst_h) {
+    float scale_x = (float)src_w / dst_w;
+    float scale_y = (float)src_h / dst_h;
+    
+    for (int y = 0; y < dst_h; y++) {
+        for (int x = 0; x < dst_w; x++) {
+            int src_x = (int)(x * scale_x);
+            int src_y = (int)(y * scale_y);
+            uint8_t pixel = src[src_y * src_w + src_x];
+            dst[y * dst_w + x] = pixel / 255.0f;  // Normalizacja 0-1
+        }
+    }
+}
+
+camera_fb_t* convert_grayscale_to_jpeg(camera_fb_t* grayscale_fb) {
+    if (grayscale_fb->format != PIXFORMAT_GRAYSCALE) {
+        return NULL;
+    }
+
+    // Użyj ESP32 JPEG encoder
+    size_t jpeg_size = 0;
+    uint8_t* jpeg_buf = NULL;
+    
+    bool jpeg_converted = frame2jpg(grayscale_fb, 80, &jpeg_buf, &jpeg_size);
+    
+    if (jpeg_converted && jpeg_buf) {
+        // Stwórz nowy frame buffer z JPEG
+        camera_fb_t* jpeg_fb = (camera_fb_t*)malloc(sizeof(camera_fb_t));
+        jpeg_fb->buf = jpeg_buf;
+        jpeg_fb->len = jpeg_size;
+        jpeg_fb->width = grayscale_fb->width;
+        jpeg_fb->height = grayscale_fb->height;
+        jpeg_fb->format = PIXFORMAT_JPEG;
+        return jpeg_fb;
+    }
+    
+    return NULL;
+}
+
+
 
 esp_err_t capture_handler(httpd_req_t *req) {
     camera_fb_t *fb = esp_camera_fb_get();
@@ -98,9 +142,68 @@ esp_err_t capture_handler(httpd_req_t *req) {
         return ESP_FAIL;
     }
 
-    httpd_resp_set_type(req, "image/jpeg");
-    httpd_resp_send(req, (const char *)fb->buf, fb->len);
+    ESP_LOGI(TAG, "Image: %dx%d, format: %d, size: %d bytes", 
+             fb->width, fb->height, fb->format, fb->len);
 
+    float* model_input = tflite_model->input()->data.f;
+
+    resize_and_normalize_grayscale(fb->buf, fb->width, fb->height,
+                                model_input, 32, 32);
+
+    
+    if (tflite_model->invoke() != kTfLiteOk) {
+        ESP_LOGE(TAG, "Cannot invoke interpreter");
+    }
+    else{
+        TfLiteTensor* output = tflite_model->output();
+        float* logits = output->data.f;
+
+        float max = logits[0];
+        uint argmax = 0;
+
+        for (int i=0; i< output->dims->data[1]; i++){
+            ESP_LOGI(TAG, "Logit %d: %f", i, logits[i]);
+            if (logits[i] > max){
+                max = logits[i];
+                argmax = i;
+            }
+        }
+
+        ESP_LOGI(TAG, "DETECTED GESTURE: %s", GESTURES[argmax]);
+    }
+
+
+    camera_fb_t* jpeg_fb;
+    uint8_t* processed_display = nullptr;
+    if (display_original){
+        jpeg_fb = convert_grayscale_to_jpeg(fb);
+
+    }
+    else {
+        // display preprocessed
+        processed_display = (uint8_t*)malloc(32 * 32);
+        for (int i = 0; i < 32 * 32; i++) {
+            processed_display[i] = (uint8_t)(model_input[i] * 255.0f);
+        }
+        camera_fb_t input_fb = {
+            processed_display,
+            32*32,
+            32,
+            32,
+            PIXFORMAT_GRAYSCALE,
+            fb->timestamp      
+        };
+        jpeg_fb = convert_grayscale_to_jpeg(&input_fb);
+    }
+
+    httpd_resp_set_type(req, "image/jpeg");
+    httpd_resp_send(req, (const char *)jpeg_fb->buf, jpeg_fb->len);
+    free(jpeg_fb->buf);
+    free(jpeg_fb);
+    if (!display_original){  
+        free(processed_display);
+    }
+      
     esp_camera_fb_return(fb);
     ESP_LOGI(TAG, "Camera: handle capture request");
 
@@ -229,9 +332,9 @@ int main() {
     
     // print_memory_stats();
     // ESP_LOGI("MODEL_SIZE", "Model size: %d bytes", model_tflite_len);
-    TFLiteModel tflite_model(model_tflite, &model_tflite_len);
+    tflite_model = new TFLiteModel(model_tflite, &model_tflite_len);
     
-    if (!tflite_model.init()) {
+    if (!tflite_model->init()) {
         ESP_LOGE(TAG, "Failed to initialize TFLite model");
         return -1;
     }

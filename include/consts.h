@@ -22,8 +22,10 @@
 // 4 for flash led or 33 for back led
 #define LED_GPIO_NUM 4
 
+//TODO: change from static to sth else
 static const char* WIFI_SSID = "<your ssid";
 static const char* WIFI_PASS = "<your password>";
 
 static const char* TAG = "gestures";
+static const char* GESTURES[] = {"fist", "1 finger", "2 fingers", "3 fingers", "4 fingers", "palm", "phone", "mouth", "open mouth", "ok", "pinky", "rock1", "rock2", "stop"};
 #endif // CONSTS_H

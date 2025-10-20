@@ -12,6 +12,7 @@ public:
     // int forward(const float* input_data);
     TfLiteTensor* input() { return input_; }
     TfLiteTensor* output() { return output_; }
+    TfLiteStatus invoke();
     bool is_initialized() const { return initialized_; }
     ~TFLiteModel();
 
