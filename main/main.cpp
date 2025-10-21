@@ -219,11 +219,19 @@ esp_err_t capture_handler(httpd_req_t *req) {
     }
 
     // Get model input tensor and dimensions
+    // Could add validation in capture_handler():
+    if (model->input()->type != kTfLiteFloat32) {
+        ESP_LOGE(TAG, "Wrong input tensor type");
+        return ESP_FAIL;
+    }
+    
     float *model_input = model->input()->data.f;
     
     TfLiteIntArray* input_dims = model->input()->dims;
-    size_t model_input_width = input_dims->data[1];
-    size_t model_input_height = input_dims->data[2];
+    size_t model_input_width = input_dims->data[2];
+    size_t model_input_height = input_dims->data[3];
+
+    ESP_LOGI(TAG, "Model input dims %d %d", model_input_width, model_input_height);
 
     resize_and_normalize_grayscale(fb->buf, fb->width, fb->height, model_input,
                                    model_input_width, model_input_height);
@@ -403,8 +411,8 @@ esp_err_t init_wifi() {
 int main() {
     ESP_LOGI(TAG, "Initialising...");
     
-    if (initCamera() != ESP_OK){
-        ESP_LOGI(TAG, "Failed to intitialise camera");
+    if (initCamera() != ESP_OK ) {
+        ESP_LOGE(TAG, "Camera initialization failed.");
         return -1;
     }
 
