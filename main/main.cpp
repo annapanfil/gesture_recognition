@@ -25,9 +25,6 @@
 
 #include <memory>
 
-// Global variable for display mode.
-static bool display_original = true;
-
 /**
  * @brief Print memory statistics to the console.
  *
@@ -253,21 +250,10 @@ esp_err_t capture_handler(httpd_req_t *req) {
     }
 
     std::unique_ptr<camera_fb_t, CameraFbDeleter> jpeg_fb = nullptr;
-    std::unique_ptr<uint8_t[]> processed_display = nullptr;
-
-    if (display_original) {
-        jpeg_fb = convert_grayscale_to_jpeg(fb);
-    } else {
-        // Display the preprocessed image
-        processed_display = std::make_unique<uint8_t[]>(model_input_width * model_input_height);
-        for (int i = 0; i < model_input_width * model_input_height; i++) {
-            processed_display[i] = (uint8_t)(model_input[i] * 255.0f);
-        }
-        camera_fb_t input_fb = {processed_display.get(), model_input_width * model_input_height, model_input_width, model_input_height,
-                                PIXFORMAT_GRAYSCALE, fb->timestamp};
-        jpeg_fb = convert_grayscale_to_jpeg(&input_fb);
-    }
-
+    
+    // Display in the web GUI
+    jpeg_fb = convert_grayscale_to_jpeg(fb);
+    
     if (!jpeg_fb) {
         ESP_LOGE(TAG, "Failed to convert to JPEG");
         httpd_resp_send_500(req);
