@@ -1,3 +1,8 @@
+"""Script for training a Convolutional Neural Network (CNN) model for gesture recognition.
+
+This script defines the training process for the CNN model, including data loading,
+preprocessing, model training, validation, and saving the trained model.
+"""
 import cnn
 import torch
 import torch.optim as optim
@@ -8,6 +13,15 @@ import os
 
 
 def train_model(model):
+    """Trains the provided CNN model using the HG14 hand gesture dataset.
+
+    The function sets up data loaders for training and validation, defines the
+    loss function and optimizer, and then iterates through epochs to train
+    and evaluate the model.
+
+    Args:
+        model (cnn.CNN): The CNN model instance to be trained.
+    """
     model.train()
     batch_size = 64
     data_root = "../data/HG14/HG14-Hand-Gesture/"

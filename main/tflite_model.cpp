@@ -11,19 +11,17 @@ TFLiteModel::TFLiteModel(const unsigned char* model_data, const unsigned int* mo
       initialized_(false) {
 }
 
-
 bool TFLiteModel::init() {
     ESP_LOGI(TAG, "Model: Initializing...");
 
     if (!model_data_ || model_size_ == 0) {
-    return false;
+        return false;
     }
-    
+
     const tflite::Model* model = tflite::GetModel(model_data_);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
         return false;
     }
-
 
     // Op resolver
     op_resolver_.AddConv2D();
@@ -32,9 +30,9 @@ bool TFLiteModel::init() {
     op_resolver_.AddMaxPool2D();
     op_resolver_.AddReshape();
     op_resolver_.AddFullyConnected();
-    op_resolver_.AddTranspose();  // ← ADD THIS
-    op_resolver_.AddQuantize();   // If using quantized models
-    op_resolver_.AddDequantize(); // If using quantized models
+    op_resolver_.AddTranspose();  
+    op_resolver_.AddQuantize();
+    op_resolver_.AddDequantize();
 
     tensor_arena_ = (uint8_t*)heap_caps_malloc(kTensorArenaSize, MALLOC_CAP_SPIRAM);
 
