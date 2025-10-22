@@ -11,12 +11,13 @@
 
 #include "esp_camera.h"
 #include "esp_http_server.h"
-#include "esp_wifi.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_wifi.h"
 #include "model.h"
+#include "wifi.h"
 #include "consts.h"
 #include "tflite_model.h"
 
@@ -24,6 +25,11 @@
 #include "esp_heap_caps.h"
 
 #include <memory>
+
+/**
+ * @brief Logging tag for ESP_LOGx macros.
+ */
+static const char* TAG = "gestures";
 
 /**
  * @brief Print memory statistics to the console.
@@ -345,62 +351,6 @@ esp_err_t startServer(httpd_handle_t &server, void* model_ctx) {
 }
 
 /**
- * @brief Initializes the Wi-Fi connection.
- *
- * @return ESP_OK on success, ESP_FAIL on failure.
- */
-esp_err_t init_wifi() {
-    // Initialize NVS (non-volatile storage) for Wi-Fi settings
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
-        ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    // Initialize TCP/IP stack and event loop
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-
-    // Configure Wi-Fi interface
-    esp_netif_create_default_wifi_sta();
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-    wifi_config_t wifi_config = {};
-    strcpy((char *)wifi_config.sta.ssid, WIFI_SSID);
-    strcpy((char *)wifi_config.sta.password, WIFI_PASS);
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    ESP_LOGI(TAG, "Wifi: Connecting to Wi-Fi...");
-
-    // Connect to Wi-Fi
-    ESP_ERROR_CHECK(esp_wifi_connect());
-
-    // Wait for connection
-    int retries = 0;
-    while (retries < 20) { // 20 second timeout
-        esp_netif_ip_info_t ip_info;
-        if (esp_netif_get_ip_info(
-                esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"),
-                &ip_info) == ESP_OK) {
-            if (ip_info.ip.addr != 0) {
-                ESP_LOGI(TAG, "WiFi connected! IP: " IPSTR,
-                         IP2STR(&ip_info.ip));
-                return ESP_OK;
-            }
-        }
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        retries++;
-    }
-    return ESP_FAIL;
-}
-
-/**
  * @brief The main function of the application.
  *
  * This function initializes the camera, Wi-Fi, and the TFLite model. It then
@@ -416,10 +366,11 @@ int main() {
         return -1;
     }
 
-    if (init_wifi() != ESP_OK) {
-        ESP_LOGE(TAG, "WiFi connection failed");
-        return -1;
-    }
+    WifiManager::initialize();
+    WifiManager& wifi_mgr = WifiManager::getInstance();
+
+    wifi_mgr.wifi_hw_init();
+    wifi_mgr.prov_start();
     
     auto tflite_model = std::make_unique<TFLiteModel>(model_tflite, &model_tflite_len);
     
@@ -428,9 +379,17 @@ int main() {
         return -1;
     }
     
+
+    ESP_LOGI(TAG, "Waiting for WiFi connection...");
+    if (!wifi_mgr.wait_for_connection(30000)) { // 30s timeout
+        ESP_LOGE(TAG, "WiFi connection timeout");
+        return -1;
+    }
+
     httpd_handle_t server = NULL;
     if (startServer(server, tflite_model.get()) != ESP_OK){
         ESP_LOGI(TAG, "Failed to start server");
+        return -1;
     }
     
     ESP_LOGI(TAG, "Setup complete");

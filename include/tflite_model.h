@@ -64,6 +64,8 @@ public:
     ~TFLiteModel();
 
 private:
+    static inline const char* TAG = "model";
+
     static constexpr int kTensorArenaSize = 37 * 1024; ///< Size of the tensor arena in bytes.
     uint8_t* tensor_arena_; ///< Pointer to the tensor arena memory.
 

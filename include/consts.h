@@ -41,25 +41,6 @@
 #define LED_GPIO_NUM 4
 
 /**
- * @brief Wi-Fi SSID for connecting to the network.
- *
- * TODO: Change from static to a more secure and configurable method (e.g., NVS).
- */
-static const char* WIFI_SSID = "<your ssid";
-
-/**
- * @brief Wi-Fi Password for connecting to the network.
- *
- * TODO: Change from static to a more secure and configurable method (e.g., NVS).
- */
-static const char* WIFI_PASS = "<your password>";
-
-/**
- * @brief Logging tag for ESP_LOGx macros.
- */
-static const char* TAG = "gestures";
-
-/**
  * @brief Array of gesture names corresponding to model output classes.
  */
 static const char* GESTURES[] = {"fist", "1 finger", "2 fingers", "3 fingers", "4 fingers", "palm", "phone", "mouth", "open mouth", "ok", "pinky", "rock1", "rock2", "stop"};

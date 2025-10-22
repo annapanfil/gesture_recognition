@@ -20,25 +20,28 @@
     cd gesture_recognition
     ```
 
-2.  **Set up your Wi-Fi:**
-
-    Edit `include/const.h` with your Wi-Fi credentials:
-    ```cpp
-    strcpy((char*)wifi_config.sta.ssid, "YOUR_WIFI_SSID");
-    strcpy((char*)wifi_config.sta.password, "YOUR_WIFI_PASSWORD");
-    ```
-3.  **Build, Flash, and Go!**
+1.  **Build, Flash, and Go!**
 
     It will install all the prerequisites (from CMake and idf) automatically if you don't have them.
     ```bash
     idf.py build flash
     ```
 
-4.  **See it running:**
+1.  **See it running:**
     ```bash
     idf.py monitor
     ```
-5. **Use the web interface:**
+
+1. **Set up the Wi-Fi credentials**
+
+    When you log to the Wi-Fi for the first time, a qr code for Wi-Fi provisioning will be displayed on the device serial port. You need to scan it with an official Espressif Provisioning tool. The application is available for both [android](https://play.google.com/store/apps/details?id=com.espressif.provsoftap) and [ios](https://apps.apple.com/in/app/esp-softap-provisioning/id1474040630).
+
+    For the next launches, the Wi-Fi credentials will be remembered and stored on NVS partition on the device.
+
+    <img src="schemas/app_logo.png" alt="Provisioning App Success" width="250">
+    <img src="schemas/app.png" alt="Provisioning App Success" width="250">
+    
+1. **Use the web interface:**
     1.  Make sure your computer is on the same Wi-Fi network as your ESP32.
     2.  Open your web browser and go to the IP address of your ESP32 (check the serial monitor for the address).
     3.  You'll see a simple web page. Click the "Capture & Detect" button and show it your best gestures!
