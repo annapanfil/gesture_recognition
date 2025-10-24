@@ -1,6 +1,5 @@
 #include "tflite_model.h"
 #include "esp_log.h"
-#include "consts.h"
 #include "esp_heap_caps.h"
   
 TFLiteModel::TFLiteModel(const unsigned char* model_data, const unsigned int* model_size) 
