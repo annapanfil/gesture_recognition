@@ -46,7 +46,7 @@
     2.  Open your web browser and go to the IP address of your ESP32 (check the serial monitor for the address).
     3.  You'll see a simple web page. Click the "Capture & Detect" button and show it your best gestures!
 
-    <!-- TODO: web gui screenshot -->
+    ![Web gui screenshot](schemas/webpage.png)
 
 ## Gestures
 The model recognises 14 gestures:

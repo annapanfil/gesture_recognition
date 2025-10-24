@@ -59,12 +59,27 @@ public:
     bool is_initialized() const { return initialized_; }
 
     /**
+     * @brief Sets the index of the last detected gesture.
+     *
+     * @param index The index of the last detected gesture.
+     */
+    void set_last_detected_index(int index) { last_detected_index_ = index; }
+
+    /**
+     * @brief Returns the index of the last detected gesture.
+     *
+     * @return int The index of the last detected gesture.
+     */
+    int last_detected_index() const { return last_detected_index_; }
+
+    /**
      * @brief Destroys the TFLiteModel object and frees allocated resources.
      */
     ~TFLiteModel();
 
 private:
-    static inline const char* TAG = "model";
+    static inline const char* TAG = "model"; ///< Tag for logging.
+    int last_detected_index_ = -1; ///< Index of the last detected gesture.
 
     static constexpr int kTensorArenaSize = 37 * 1024; ///< Size of the tensor arena in bytes.
     uint8_t* tensor_arena_; ///< Pointer to the tensor arena memory.

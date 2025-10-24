@@ -37,4 +37,16 @@ esp_err_t startServer(httpd_handle_t &server, void* model_ctx);
  */
 esp_err_t capture_handler(httpd_req_t *req);
 
+/**
+ * @brief HTTP request handler for retrieving the detected gesture name.
+ *
+ * This function is called when a GET request is made to the /gesture_name URI.
+ * It retrieves the name of the detected gesture from the TFLite model and
+ * sends it back to the client as plain text.
+ *
+ * @param req The HTTP request.
+ * @return ESP_OK on success, or ESP_FAIL on failure.
+ */
+esp_err_t gesture_name_handler(httpd_req_t *req);
+
 #endif // WEB_GUI_H
