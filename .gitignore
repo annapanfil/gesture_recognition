@@ -3,6 +3,7 @@ models/
 data/
 managed_components/
 *.o
+sdkconfig
 
 .vscode/
 *__pycache__/
