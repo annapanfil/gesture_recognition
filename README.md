@@ -24,8 +24,11 @@
 
     It will install all the prerequisites (from CMake and idf) automatically if you don't have them.
     ```bash
+    source ~/esp/v5.0.8/esp-idf/export.sh
     idf.py build flash
     ```
+
+    Replace the path with actual path where you've installed esp-idf.
 
 1.  **See it running:**
     ```bash
@@ -47,6 +50,58 @@
     3.  You'll see a simple web page. Click the "Capture & Detect" button and show it your best gestures!
 
     ![Web gui screenshot](schemas/webpage.png)
+    
+### Flashing on QEMU
+The program can be also run in QEMU emulator for debugging purposes. To open it like this follow these steps:
+1. Create a common .bin file to represent our flash
+    ```bash
+    esptool.py --chip esp32 merge_bin --output result.bin --fill-flash-size 2MB 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin 0x10000 build/gestures.bin --flash_mode dio --flash_freq 40m --flash_size 2MB
+    ```
+
+    You can check the flash size of your board in the logs when rebooting your esp. The exact locations for all the .bin files can be found in `build/flasher_args.json` in `flash_files` section.
+
+2. Run QEMU
+
+    ```qemu-system-xtensa -nographic -machine esp32 -drive file=result.bin,if=mtd,format=raw -m 8M```
+
+    The `-m 8M` enables PSRAM usage.
+
+    Press ctrl+A,X to exit the emulator.
+
+3. Debug on QEMU (in vscode)
+    1. Install [vscode extension for gdb](https://marketplace.visualstudio.com/items?itemName=webfreak.debug)
+
+    1. Add `GDB: Connect to gdb server` (modified) configuration to `.vscode/launch.json`:
+
+        ```json
+        {
+        "type": "gdb",
+        "gdbpath": "/home/anna/.espressif/tools/xtensa-esp-elf-gdb/12.1_20231023/xtensa-esp-elf-gdb/bin/xtensa-esp32-elf-gdb",
+        "request": "attach",
+        "name": "Attach to QEMU",
+        "executable": "${workspaceFolder}/build/qemu-test.elf",
+        "target": ":1234",
+        "remote": true,
+        "cwd": "${workspaceRoot}",
+        "valuesFormatting": "parseText"
+        },
+        ```
+
+        Find the gdb path with: `which xtensa-esp32-elf-gdb`. If it's not available, install it with `idf_tools.py install xtensa-esp32-elf-gdb`
+
+    1. Set the breakpoints
+
+    1. Run the emulator in debug mode:  
+
+        ```qemu-system-xtensa -s -nographic -machine esp32 -drive file=result.bin,if=mtd,format=raw```
+
+        `-s` -- debug mode </br>
+        `-S` -- don't start until we connect the debugger</br>
+        
+        Press ctrl+A, X to exit it.
+
+    1. Go to Run & Debug, choose "Attach to QEMU" run and debug.
+        ![Run and debug interface](schemas/qemu.png)
 
 ## Gestures
 The model recognises 14 gestures:
@@ -76,11 +131,11 @@ If you want to train your own model, the training script is ready in `scripts/tr
 
 Camera → Preprocess (normalise and resize) → TensorFlow Lite → Web UI
 
-## 🚀 Performance
+<!-- ## 🚀 Performance
 - Inference time: ...
 - Memory usage: ...
 - Accuracy: ...
-- Latency: ...
+- Latency: ... -->
 
 ## Memory management
 

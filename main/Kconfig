@@ -1,0 +1,8 @@
+# Create new option in menuconfig
+config ENABLE_QEMU_DEBUG
+    bool "Enable QEMU mode (disables hardware-specifics)"
+    default n
+    help
+        Enable this when running in QEMU emulator to disable hardware-specific features like camera.      
+
+      

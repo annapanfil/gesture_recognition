@@ -3,3 +3,11 @@ idf_component_register(SRCS "camera.cpp" "web_gui.cpp" "wifi.cpp" "main.cpp" "tf
                         REQUIRES esp_http_server esp_wifi nvs_flash esp_event esp_netif wifi_provisioning)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-common")
+
+project(gestures)
+add_custom_target(run-qemu
+    COMMAND esptool.py --chip esp32 merge_bin --output result.bin --fill-flash-size 2MB 0x1000 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x10000 ${PROJECT_NAME}.bin --flash_mode dio --flash_freq 40m --flash_size 2MB
+    COMMAND qemu-system-xtensa -nographic -machine esp32 -drive file=result.bin,if=mtd,format=raw -m 8M
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    USES_TERMINAL
+)

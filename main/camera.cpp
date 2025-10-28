@@ -8,6 +8,11 @@ static const char* TAG = "camera";
 esp_err_t initCamera() {
     ESP_LOGI(TAG, "Camera: Initializing...");
 
+    #ifdef CONFIG_ENABLE_QEMU_DEBUG
+        ESP_LOGW(TAG, "QEMU detected: Skipping camera initialization");
+        return ESP_OK;
+    #endif
+
     // Check if PSRAM is available
     size_t total_heap = esp_get_free_heap_size();
     ESP_LOGI(TAG,

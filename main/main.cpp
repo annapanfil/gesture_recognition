@@ -78,20 +78,22 @@ int main() {
         return -1;
     }
 
+    # ifndef CONFIG_ENABLE_QEMU_DEBUG
     WifiManager::initialize();
     WifiManager& wifi_mgr = WifiManager::getInstance();
 
     wifi_mgr.wifi_hw_init();
     wifi_mgr.prov_start();
-    
+    #endif //CONFIG_ENABLE_QEMU_DEBUG
+
     auto tflite_model = std::make_unique<TFLiteModel>(model_tflite, &model_tflite_len);
     
     if (!tflite_model->init()) {
         ESP_LOGE(TAG, "Failed to initialize TFLite model");
         return -1;
     }
-    
 
+    #ifndef CONFIG_ENABLE_QEMU_DEBUG
     ESP_LOGI(TAG, "Waiting for WiFi connection...");
     if (!wifi_mgr.wait_for_connection(30000)) { // 30s timeout
         ESP_LOGE(TAG, "WiFi connection timeout");
@@ -103,7 +105,8 @@ int main() {
         ESP_LOGI(TAG, "Failed to start server");
         return -1;
     }
-    
+    #endif //CONFIG_ENABLE_QEMU_DEBUG
+
     ESP_LOGI(TAG, "Setup complete");
 
     // Suspend the main task, as all operations are handled by event loops and other tasks
