@@ -1,0 +1,16 @@
+on: [push]
+jobs:
+  build_and_setup:
+    runs-on: ubuntu-latest
+    container:
+      image: panka134/esp32build-v5.5.1:latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Build project
+        run: |
+          export HOME=/home/ubuntu
+          . /home/ubuntu/esp-idf-v5.5.1/export.sh
+          idf.py set-target esp32
+          idf.py build
+        shell: bash

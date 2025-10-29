@@ -9,3 +9,4 @@ sdkconfig
 *__pycache__/
 *.lock
 *.old
+*.bin 
