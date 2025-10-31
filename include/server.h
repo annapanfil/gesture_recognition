@@ -2,6 +2,7 @@
 #define SERVER_H
 
 #include "esp_http_server.h"
+#include "esp_camera.h"
 
 extern const char* WEBPAGE_HTML; ///< HTML content for the main web page.
 extern const char* GESTURES[]; ///< Array of gesture names corresponding to model output classes.
@@ -22,6 +23,21 @@ esp_err_t index_handler(httpd_req_t *req);
  * @return ESP_OK on success, ESP_FAIL on failure.
  */
 esp_err_t startServer(httpd_handle_t &server, void* model_ctx);
+
+/**
+ * @brief Captures a photo from the camera or a mock source.
+ *
+ * @param[out] fb Pointer to the camera frame buffer structure to hold the captured image.
+ * @return ESP_OK on success, ESP_FAIL on failure.
+ */
+camera_fb_t* get_photo();
+
+/**
+ * @brief Frees the resources associated with a captured photo.
+ *
+ * @param[in] fb Pointer to the camera frame buffer structure to be freed.
+ */
+void free_resource(camera_fb_t *fb);
 
 /**
  * @brief HTTP request handler for capturing an image and performing gesture

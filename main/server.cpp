@@ -1,9 +1,12 @@
-#include "server.h"
 #include "camera.h"
+#include "server.h"
+
+#ifdef CONFIG_ENABLE_QEMU_DEBUG
+#include "camera_mock.h"
+#endif //CONFIG_ENABLE_QEMU_DEBUG
 
 #include "esp_http_server.h"
 #include "esp_log.h"
-#include "esp_camera.h"
 #include "tflite_model.h"
 #include "esp_netif.h"
 #include <memory>
@@ -61,7 +64,6 @@ async function capture() {
 const char* GESTURES[] = {"fist", "1 finger", "2 fingers", "3 fingers", "4 fingers", "palm", "phone", "mouth", "open mouth", "ok", "pinky", "rock1", "rock2", "stop"};
 
 esp_err_t index_handler(httpd_req_t *req) {
-    ESP_LOGI(TAG, "Wifi: handle index request");
     httpd_resp_set_type(req, "text/html");
     return httpd_resp_send(req, MAIN_PAGE, strlen(MAIN_PAGE));
 }
@@ -99,8 +101,24 @@ esp_err_t startServer(httpd_handle_t &server, void* model_ctx) {
     }
 }
 
+camera_fb_t* get_photo() {
+    #ifndef CONFIG_ENABLE_QEMU_DEBUG
+    return esp_camera_fb_get();
+    #else
+    return mock_get_photo();
+    #endif //CONFIG_ENABLE_QEMU_DEBUG 
+}
+
+void free_resource(camera_fb_t *fb){
+    #ifndef CONFIG_ENABLE_QEMU_DEBUG
+    esp_camera_fb_return(fb);
+    #else
+    mock_free_resource(fb);
+    #endif //CONFIG_ENABLE_QEMU_DEBUG 
+}
+
 esp_err_t capture_handler(httpd_req_t *req) {
-    camera_fb_t *fb = esp_camera_fb_get();
+    camera_fb_t *fb = get_photo();
     if (!fb) {
         httpd_resp_send_500(req);
         return ESP_FAIL;
@@ -111,7 +129,7 @@ esp_err_t capture_handler(httpd_req_t *req) {
     if (!model || !model->is_initialized()) {
         ESP_LOGE(TAG, "Model not initialized or not passed in context");
         httpd_resp_send_500(req);
-        esp_camera_fb_return(fb);
+        free_resource(fb);
         return ESP_FAIL;
     }
 
@@ -129,7 +147,6 @@ esp_err_t capture_handler(httpd_req_t *req) {
     size_t model_input_height = input_dims->data[3];
 
     ESP_LOGI(TAG, "Model input dims %d %d", model_input_width, model_input_height);
-
     resize_and_normalize_grayscale(fb->buf, fb->width, fb->height, model_input,
                                    model_input_width, model_input_height);
 
@@ -159,8 +176,9 @@ esp_err_t capture_handler(httpd_req_t *req) {
     std::unique_ptr<camera_fb_t, CameraFbDeleter> jpeg_fb = nullptr;
     
     // Display in the web GUI
+
     jpeg_fb = convert_grayscale_to_jpeg(fb);
-    
+
     if (!jpeg_fb) {
         ESP_LOGE(TAG, "Failed to convert to JPEG");
         httpd_resp_send_500(req);
@@ -169,7 +187,7 @@ esp_err_t capture_handler(httpd_req_t *req) {
         httpd_resp_send(req, (const char *)jpeg_fb->buf, jpeg_fb->len);
     }
 
-    esp_camera_fb_return(fb);
+    free_resource(fb);
     ESP_LOGI(TAG, "Camera: handle capture request");
 
     return ESP_OK;
