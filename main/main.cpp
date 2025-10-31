@@ -13,10 +13,15 @@
 #include "esp_heap_caps.h"
 #include "esp_system.h"
 
-#include "model.h"
+#ifdef CONFIG_ENABLE_QEMU_DEBUG
+#include "ethernet.h"
+#else
 #include "wifi.h"
+#endif //CONFIG_ENABLE_QEMU_DEBUG
+
+#include "model.h"
 #include "camera.h"
-#include "web_gui.h"
+#include "server.h"
 #include "tflite_model.h"
 
 /**
@@ -62,6 +67,7 @@ void print_memory_stats() {
     ESP_LOGI("MEMORY", "====================");
 }
 
+
 /**
  * @brief The main function of the application.
  *
@@ -99,13 +105,17 @@ int main() {
         ESP_LOGE(TAG, "WiFi connection timeout");
         return -1;
     }
+    #else
+    // network is emulated from host in QEMU
+    register_ethernet();
+    ESP_LOGI(TAG, "Ethernet initialized in QEMU");
+    #endif //CONFIG_ENABLE_QEMU_DEBUG
 
     httpd_handle_t server = NULL;
     if (startServer(server, tflite_model.get()) != ESP_OK){
         ESP_LOGI(TAG, "Failed to start server");
         return -1;
     }
-    #endif //CONFIG_ENABLE_QEMU_DEBUG
 
     ESP_LOGI(TAG, "Setup complete");
 

@@ -1,5 +1,5 @@
-#ifndef WEB_GUI_H
-#define WEB_GUI_H
+#ifndef SERVER_H
+#define SERVER_H
 
 #include "esp_http_server.h"
 
@@ -49,4 +49,4 @@ esp_err_t capture_handler(httpd_req_t *req);
  */
 esp_err_t gesture_name_handler(httpd_req_t *req);
 
-#endif // WEB_GUI_H
+#endif // SERVER_H

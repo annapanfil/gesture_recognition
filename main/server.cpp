@@ -1,4 +1,4 @@
-#include "web_gui.h"
+#include "server.h"
 #include "camera.h"
 
 #include "esp_http_server.h"
@@ -61,6 +61,7 @@ async function capture() {
 const char* GESTURES[] = {"fist", "1 finger", "2 fingers", "3 fingers", "4 fingers", "palm", "phone", "mouth", "open mouth", "ok", "pinky", "rock1", "rock2", "stop"};
 
 esp_err_t index_handler(httpd_req_t *req) {
+    ESP_LOGI(TAG, "Wifi: handle index request");
     httpd_resp_set_type(req, "text/html");
     return httpd_resp_send(req, MAIN_PAGE, strlen(MAIN_PAGE));
 }
