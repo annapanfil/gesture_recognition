@@ -53,20 +53,9 @@
     
 ### Flashing on QEMU
 The program can be also run in QEMU emulator for debugging purposes. To open it like this follow these steps:
-1. Create a common .bin file to represent our flash
-    ```bash
-    esptool.py --chip esp32 merge_bin --output result.bin --fill-flash-size 2MB 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin 0x10000 build/gestures.bin --flash_mode dio --flash_freq 40m --flash_size 2MB
-    ```
+1. Select `CONFIG_ENABLE_QEMU_DEBUG=y` and `CONFIG_ETH_USE_OPENETH=y` in `idf.py menuconfig`
 
-    You can check the flash size of your board in the logs when rebooting your esp. The exact locations for all the .bin files can be found in `build/flasher_args.json` in `flash_files` section.
-
-2. Run QEMU
-
-    ```qemu-system-xtensa -nographic -machine esp32 -drive file=result.bin,if=mtd,format=raw -m 8M```
-
-    The `-m 8M` enables PSRAM usage.
-
-    Press ctrl+A,X to exit the emulator.
+2. Run QEMU with `idf.py run-qemu`. Press ctrl+A,X to exit the emulator.
 
 3. Debug on QEMU (in vscode)
     1. Install [vscode extension for gdb](https://marketplace.visualstudio.com/items?itemName=webfreak.debug)
@@ -79,7 +68,7 @@ The program can be also run in QEMU emulator for debugging purposes. To open it 
         "gdbpath": "/home/anna/.espressif/tools/xtensa-esp-elf-gdb/12.1_20231023/xtensa-esp-elf-gdb/bin/xtensa-esp32-elf-gdb",
         "request": "attach",
         "name": "Attach to QEMU",
-        "executable": "${workspaceFolder}/build/qemu-test.elf",
+        "executable": "${workspaceFolder}/build/gestures.elf",
         "target": ":1234",
         "remote": true,
         "cwd": "${workspaceRoot}",
@@ -91,14 +80,7 @@ The program can be also run in QEMU emulator for debugging purposes. To open it 
 
     1. Set the breakpoints
 
-    1. Run the emulator in debug mode:  
-
-        ```qemu-system-xtensa -s -nographic -machine esp32 -drive file=result.bin,if=mtd,format=raw```
-
-        `-s` -- debug mode </br>
-        `-S` -- don't start until we connect the debugger</br>
-        
-        Press ctrl+A, X to exit it.
+    1. Run the emulator in debug mode with `idf.py run-qemu-debug`. Press ctrl+A, X to exit it.
 
     1. Go to Run & Debug, choose "Attach to QEMU" run and debug.
         ![Run and debug interface](schemas/qemu.png)
@@ -117,6 +99,7 @@ gesture_recognition/
 ├── main/           # Main source files
 ├── models/         # Model file (trained, quantised and exported to tflite)
 ├── scripts/        # Python scripts for model training and conversion
+├── tools/          # Dockerfile for CI/CD
 ├── CMakeLists.txt
 └── partitions.csv  # Custom partitioning
 ```
